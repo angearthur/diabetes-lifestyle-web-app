@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Diabetes Lifestyle App</title>
+</head>
+<body>
+    <h1>Welcome to Diabetes Lifestyle Web App</h1>
+    <p>This is the frontend placeholder.</p>
+
+    <h2>Patient Info:</h2>
+    <pre id="patientData">Loading...</pre>
+
+    <script>
+        // Fetch data from the backend
+        fetch('http://127.0.0.1:5000/patient')
+            .then(response => response.json())
+            .then(data => {
+                // Display JSON data nicely
+                document.getElementById('patientData').textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(err => {
+                document.getElementById('patientData').textContent = "Error fetching data";
+                console.error(err);
+            });
+    </script>
+</body>
+</html>
