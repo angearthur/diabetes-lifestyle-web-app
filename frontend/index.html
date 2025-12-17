@@ -1,27 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Diabetes Lifestyle App</title>
+    <meta charset="UTF-8">
+    <title>Diabetes Lifestyle Web App</title>
 </head>
 <body>
-    <h1>Welcome to Diabetes Lifestyle Web App</h1>
-    <p>This is the frontend placeholder.</p>
 
-    <h2>Patient Info:</h2>
-    <pre id="patientData">Loading...</pre>
+<h1>Welcome to Diabetes Lifestyle Web App</h1>
+<p>This is the frontend placeholder.</p>
 
-    <script>
-        // Fetch data from the backend
-        fetch('http://127.0.0.1:5000/patient')
-            .then(response => response.json())
-            .then(data => {
-                // Display JSON data nicely
-                document.getElementById('patientData').textContent = JSON.stringify(data, null, 2);
-            })
-            .catch(err => {
-                document.getElementById('patientData').textContent = "Error fetching data";
-                console.error(err);
-            });
-    </script>
+<h2>Enter Patient Information</h2>
+
+<form id="patientForm">
+    <label>Name:</label><br>
+    <input type="text" id="name" required><br><br>
+
+    <label>Age:</label><br>
+    <input type="number" id="age" required><br><br>
+
+    <label>Weight (kg):</label><br>
+    <input type="number" id="weight" required><br><br>
+
+    <label>Blood Sugar:</label><br>
+    <input type="number" id="blood_sugar" required><br><br>
+
+    <button type="submit">Submit</button>
+</form>
+
+<h3>Server Response:</h3>
+<pre id="response"></pre>
+
+<script>
+document.getElementById("patientForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const data = {
+        name: document.getElementById("name").value,
+        age: document.getElementById("age").value,
+        weight: document.getElementById("weight").value,
+        blood_sugar: document.getElementById("blood_sugar").value
+    };
+
+    fetch("http://127.0.0.1:5000/submit-data", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        document.getElementById("response").textContent =
+            JSON.stringify(result, null, 2);
+    })
+    .catch(error => {
+        document.getElementById("response").textContent =
+            "Error sending data";
+    });
+});
+</script>
+
 </body>
 </html>
