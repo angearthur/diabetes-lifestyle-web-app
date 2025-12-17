@@ -1,8 +1,8 @@
-from flask import Flask, jsonify
-from flask_cors import CORS  # <-- import CORS
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # <-- allow cross-origin requests
+CORS(app)
 
 # Test route
 @app.route('/')
@@ -20,5 +20,15 @@ def patient_info():
     }
     return jsonify(sample_data)
 
+# ✅ NEW: submit patient data
+@app.route('/submit-data', methods=['POST'])
+def submit_data():
+    data = request.json
+    return jsonify({
+        "status": "success",
+        "received": data
+    })
+
+# ⚠️ This must stay at the very bottom
 if __name__ == "__main__":
     app.run(debug=True)
