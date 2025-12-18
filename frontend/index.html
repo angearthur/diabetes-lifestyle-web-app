@@ -4,28 +4,23 @@
     <meta charset="UTF-8">
     <title>Diabetes Lifestyle Web App</title>
 
-    <!-- Bootstrap CSS -->
-    <link 
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" 
-        rel="stylesheet"
-    >
+    <!-- Bootstrap (styling) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-light">
 
 <div class="container mt-5">
 
-    <div class="text-center mb-4">
-        <h1 class="text-primary">Diabetes Lifestyle Web App</h1>
-        <p class="text-muted">Personalized health recommendations</p>
-    </div>
+    <h1 class="text-primary mb-3">Diabetes Lifestyle Web App</h1>
+    <p class="text-muted">Personalised lifestyle recommendations for diabetic patients.</p>
 
-    <!-- Error Message -->
-    <div id="errorBox" class="alert alert-danger d-none"></div>
-
-    <!-- Form Card -->
-    <div class="card shadow mb-4">
+    <!-- Patient Form -->
+    <div class="card shadow">
         <div class="card-body">
-            <h4 class="card-title mb-3">Enter Patient Information</h4>
+            <h3 class="card-title">Enter Patient Information</h3>
 
             <form id="patientForm">
                 <div class="mb-3">
@@ -44,84 +39,101 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Blood Sugar</label>
+                    <label class="form-label">Blood Sugar (mg/dL)</label>
                     <input type="number" id="blood_sugar" class="form-control" required>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100">
-                    Submit
-                </button>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </form>
         </div>
     </div>
 
-    <!-- Result Card -->
-    <div id="result" class="card shadow d-none">
+    <!-- Recommendations -->
+    <div class="card shadow mt-4 d-none" id="resultCard">
         <div class="card-body">
-            <h4 class="card-title text-success">Health Recommendations</h4>
-            <p><strong>Patient:</strong> <span id="patientName"></span></p>
-            <ul id="adviceList" class="list-group"></ul>
+            <h4 class="card-title text-success">Recommendations</h4>
+            <ul id="recommendations" class="list-group"></ul>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card shadow mt-4 d-none" id="chartCard">
+        <div class="card-body">
+            <h4 class="card-title text-info">Blood Sugar Level</h4>
+            <canvas id="healthChart"></canvas>
         </div>
     </div>
 
 </div>
 
 <script>
-document.getElementById("patientForm").addEventListener("submit", function(e) {
+let chart;
+
+document.getElementById("patientForm").addEventListener("submit", function (e) {
     e.preventDefault();
 
-    const name = document.getElementById("name").value.trim();
-    const age = Number(document.getElementById("age").value);
-    const weight = Number(document.getElementById("weight").value);
     const bloodSugar = Number(document.getElementById("blood_sugar").value);
 
-    const errorBox = document.getElementById("errorBox");
-    errorBox.classList.add("d-none");
-
-    // Validation
-    if (age <= 0 || age > 120) {
-        errorBox.textContent = "Age must be between 1 and 120.";
-        errorBox.classList.remove("d-none");
-        return;
-    }
-
-    if (weight <= 0 || weight > 300) {
-        errorBox.textContent = "Weight must be between 1 and 300 kg.";
-        errorBox.classList.remove("d-none");
-        return;
-    }
-
-    if (bloodSugar <= 0 || bloodSugar > 500) {
-        errorBox.textContent = "Blood sugar must be between 1 and 500.";
-        errorBox.classList.remove("d-none");
-        return;
-    }
-
-    const data = { name, age, weight, blood_sugar: bloodSugar };
+    const data = {
+        name: document.getElementById("name").value,
+        age: document.getElementById("age").value,
+        weight: document.getElementById("weight").value,
+        blood_sugar: bloodSugar
+    };
 
     fetch("http://127.0.0.1:5000/submit-data", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json"
+        },
         body: JSON.stringify(data)
     })
-    .then(res => res.json())
+    .then(response => response.json())
     .then(result => {
-        document.getElementById("result").classList.remove("d-none");
-        document.getElementById("patientName").textContent = result.patient.name;
 
-        const list = document.getElementById("adviceList");
+        /* Show recommendations */
+        document.getElementById("resultCard").classList.remove("d-none");
+        const list = document.getElementById("recommendations");
         list.innerHTML = "";
 
-        result.recommendations.forEach(item => {
+        result.recommendations.forEach(rec => {
             const li = document.createElement("li");
             li.className = "list-group-item";
-            li.textContent = item;
+            li.textContent = rec;
             list.appendChild(li);
         });
+
+        /* Show chart */
+        document.getElementById("chartCard").classList.remove("d-none");
+        const ctx = document.getElementById("healthChart");
+
+        if (chart) {
+            chart.destroy();
+        }
+
+        chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Blood Sugar'],
+                datasets: [{
+                    label: 'mg/dL',
+                    data: [bloodSugar],
+                    backgroundColor: bloodSugar > 140 ? 'red' : 'green'
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 300
+                    }
+                }
+            }
+        });
     })
-    .catch(() => {
-        errorBox.textContent = "Cannot connect to backend server.";
-        errorBox.classList.remove("d-none");
+    .catch(error => {
+        alert("Error sending data to backend");
+        console.error(error);
     });
 });
 </script>
