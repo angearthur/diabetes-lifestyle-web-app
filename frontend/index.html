@@ -3,125 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <title>Diabetes Lifestyle Web App</title>
-    <!-- Bootstrap CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Chart.js CDN -->
+
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    >
+
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="container mt-5">
 
-<h1 class="mb-4">Welcome to Diabetes Lifestyle Web App</h1>
+<body class="bg-light">
 
-<h2>Enter Patient Information</h2>
+<div class="container mt-5">
 
-<form id="patientForm" class="mb-3">
-    <label>Name:</label>
-    <input type="text" id="name" class="form-control mb-2" required>
-
-    <label>Age:</label>
-    <input type="number" id="age" class="form-control mb-2" required>
-
-    <label>Weight (kg):</label>
-    <input type="number" id="weight" class="form-control mb-2" required>
-
-    <label>Blood Sugar (mg/dL):</label>
-    <input type="number" id="blood_sugar" class="form-control mb-2" required>
-
-    <button type="submit" class="btn btn-primary mt-2">Submit</button>
-</form>
-
-<!-- Human-readable recommendations -->
-<div id="recommendations" class="mb-4"></div>
-
-<!-- Chart Card -->
-<div class="card shadow mt-4 d-none" id="chartCard">
-    <div class="card-body">
-        <h4 class="card-title text-info">Blood Sugar Level</h4>
-        <canvas id="healthChart"></canvas>
+    <!-- Title -->
+    <div class="text-center mb-4">
+        <h1 class="fw-bold">Diabetes Lifestyle Web App</h1>
+        <p class="text-muted">Personal health self-assessment tool</p>
     </div>
+
+    <!-- Form -->
+    <div class="card shadow mx-auto" style="max-width: 500px;">
+        <div class="card-body">
+            <h4 class="text-center mb-3">Enter Your Information</h4>
+
+            <form id="patientForm">
+
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <input type="text" id="name" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Age</label>
+                    <input type="number" id="age" class="form-control" min="1" max="120" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Weight (kg)</label>
+                    <input type="number" id="weight" class="form-control" min="1" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Height (meters)</label>
+                    <input type="number" id="height" class="form-control" step="0.01" min="0.5" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Fasting Blood Sugar (mg/dL)</label>
+                    <input type="number" id="blood_sugar" class="form-control" min="1" required>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        Submit Assessment
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div id="results" class="card shadow mt-4 mx-auto d-none" style="max-width: 600px;">
+        <div class="card-body">
+
+            <h4 class="text-center text-success mb-3">Health Assessment</h4>
+
+            <p><strong>Name:</strong> <span id="r-name"></span></p>
+            <p><strong>Age:</strong> <span id="r-age"></span></p>
+
+            <hr>
+
+            <h5>Blood Sugar Status</h5>
+            <p id="r-sugar-status"></p>
+            <p class="text-muted" id="r-sugar-advice"></p>
+
+            <hr>
+
+            <h5>Body Mass Index (BMI)</h5>
+            <p><strong>BMI:</strong> <span id="r-bmi"></span></p>
+            <p id="r-bmi-status"></p>
+
+            <hr>
+
+            <h5>Age-Based Diabetes Risk</h5>
+            <p id="r-age-risk"></p>
+
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div id="chartCard" class="card shadow mt-4 mx-auto d-none" style="max-width: 600px;">
+        <div class="card-body">
+            <h5 class="text-center text-info">Blood Sugar Level (mg/dL)</h5>
+            <canvas id="healthChart"></canvas>
+        </div>
+    </div>
+
 </div>
 
 <script>
 let chart;
 
-document.getElementById("patientForm").addEventListener("submit", function(e) {
+document.getElementById("patientForm").addEventListener("submit", function (e) {
     e.preventDefault();
 
-    // Get values
-    const name = document.getElementById("name").value.trim();
-    const age = parseInt(document.getElementById("age").value);
-    const weight = parseFloat(document.getElementById("weight").value);
-    const blood_sugar = parseFloat(document.getElementById("blood_sugar").value);
+    const bloodSugar = Number(document.getElementById("blood_sugar").value);
 
-    // Validation
-    let errors = [];
-    if (!name) errors.push("Name is required.");
-    if (isNaN(age) || age <= 0 || age > 120) errors.push("Age must be 1–120.");
-    if (isNaN(weight) || weight <= 0 || weight > 300) errors.push("Weight must be 1–300 kg.");
-    if (isNaN(blood_sugar) || blood_sugar <= 0 || blood_sugar > 500) errors.push("Blood sugar must be 1–500 mg/dL.");
+    const data = {
+        name: document.getElementById("name").value,
+        age: document.getElementById("age").value,
+        weight: document.getElementById("weight").value,
+        height: document.getElementById("height").value,
+        blood_sugar: bloodSugar
+    };
 
-    if (errors.length > 0) {
-        document.getElementById("recommendations").innerHTML = 
-            `<div class="alert alert-danger">${errors.join("<br>")}</div>`;
-        return;
-    }
-
-    const data = { name, age, weight, blood_sugar };
-
-    fetch("http://127.0.0.1:5000/submit-data", {
+    fetch("http://localhost:5001/submit-data", {
+ 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
     })
-    .then(response => response.json())
+    .then(res => res.json())
     .then(result => {
-        // Display recommendations in cards
-        const recDiv = document.getElementById("recommendations");
-        recDiv.innerHTML = `
-            <div class="card shadow mb-2">
-                <div class="card-body">
-                    <h5 class="card-title">Patient: ${result.patient.name}</h5>
-                    <p>Age: ${result.patient.age}</p>
-                    <p>Weight: ${result.patient.weight} kg</p>
-                    <p>Blood Sugar: ${result.patient.blood_sugar} mg/dL</p>
-                </div>
-            </div>
-            ${result.recommendations.map(r => `
-                <div class="card mb-2 border-warning">
-                    <div class="card-body">
-                        ${r}
-                    </div>
-                </div>
-            `).join('')}
-        `;
 
-        // Show chart
+        document.getElementById("results").classList.remove("d-none");
         document.getElementById("chartCard").classList.remove("d-none");
+
+        document.getElementById("r-name").textContent = result.patient.name;
+        document.getElementById("r-age").textContent = result.patient.age;
+
+        document.getElementById("r-sugar-status").textContent =
+            result.clinical_analysis.blood_sugar_status;
+
+        document.getElementById("r-sugar-advice").textContent =
+            result.clinical_analysis.blood_sugar_advice;
+
+        document.getElementById("r-bmi").textContent =
+            result.clinical_analysis.bmi;
+
+        document.getElementById("r-bmi-status").textContent =
+            result.clinical_analysis.bmi_status;
+
+        document.getElementById("r-age-risk").textContent =
+            result.clinical_analysis.age_risk;
+
+        // Graph color based on medical scale
+        let color = "green";
+        if (bloodSugar < 70 || bloodSugar >= 126) color = "red";
+        else if (bloodSugar >= 100) color = "orange";
+
         const ctx = document.getElementById("healthChart");
 
         if (chart) chart.destroy();
 
         chart = new Chart(ctx, {
-            type: 'bar',
+            type: "bar",
             data: {
-                labels: ['Blood Sugar'],
+                labels: ["Blood Sugar"],
                 datasets: [{
-                    label: 'mg/dL',
-                    data: [blood_sugar],
-                    backgroundColor: blood_sugar > 140 ? 'red' : 'green'
+                    label: "mg/dL",
+                    data: [bloodSugar],
+                    backgroundColor: color
                 }]
             },
             options: {
                 scales: {
-                    y: { beginAtZero: true, max: 300 }
+                    y: {
+                        beginAtZero: true,
+                        max: 300
+                    }
                 }
             }
         });
     })
-    .catch(error => {
-        document.getElementById("recommendations").innerHTML = 
-            `<div class="alert alert-danger">Error sending data</div>`;
-        console.error(error);
+    .catch(err => {
+        alert("Backend connection error");
+        console.error(err);
     });
 });
 </script>
